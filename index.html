@@ -1,0 +1,20 @@
+
+<!DOCTYPE html>
+<html>
+   <head><title>Tail -f</title></head>
+   <script src="/socket.io/socket.io.js"></script>
+   <script>
+      var socket = io("ws://localhost:3000");
+      socket.on('file-updated', function(data){
+          console.log(data);
+          document.getElementById('message-container').innerHTML ='<pre>' + data + '</pre>';
+      });
+      socket.on('init',function(data){
+        console.log(data);
+        document.getElementById('message-container').innerHTML ='<pre>' + data + '</pre>';      })
+   </script>
+   <body>
+       <h1>Log monitoring app</h1>
+      <div id="message-container"></div>
+      </body>
+</html>

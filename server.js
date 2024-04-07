@@ -1,33 +1,40 @@
 const App = require('./app')
-
+var appClass = new App();
+const file1 = 'Logs/info.log';
 const express = require('express');
 const app = express();
-
-var appClass = new App();
-
-const file1 = 'Logs/info.log'; 
-const file2 = 'Logs/temp.log'; 
-
-appClass.on('file-updated', log =>{
-    console.log(log.message);
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const path = require('path'); 
+const { read } = require('./readLastLines');
+appClass.fileView(file1);
+app.get('/log', (req, res) => {
+    console.log("request received");
+    const options = {
+        root: path.join(__dirname)
+    };
+    const fileName = 'index.html';
+    res.sendFile(fileName, options, function (err) {
+        if (err) {
+            next(err);
+        } else {
+            console.log('Sent:', fileName);
+        }
+    });
 })
 
-appClass.fileView(file1);
-appClass.fileView(file2);
+io.on('connection', async function(socket){
+    console.log("new connection established:"+socket.id);
+    appClass.on('file-updated', log =>{
+        console.log("log.message is ", log.message);
+        socket.emit("file-updated",log.message);
+    });
+    let initialData = await read(file1, 10);    // last 10 lines  
+    initialData = initialData.toString();
+    console.log("initialData is", initialData); 
+    socket.emit("init",initialData);
+});
 
-// app.get('/logs', (req,res) => {
-//     try{
-//         appClass.on('file-updated', log => {
-//            console.log(log.message);
-//            // res.status(200).json({new_content:log});
-//         });
-//     }catch(err){
-//         console.log(err);
-//         //res.status(400).json({errMsg : "Error occured"});
-//     }
-// });
-
-// appClass.fileView(file1);
-// app.listen(3000, () => {
-//     console.log('Making connection on post 3000...');
-// })  
+http.listen(3000, function(){
+    console.log('listening on localhost:3000');
+});
